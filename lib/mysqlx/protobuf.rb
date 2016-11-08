@@ -3,6 +3,54 @@ require_relative 'protobuf/mysqlx.pb'
 module Mysqlx
   module Protobuf
     module Datatypes
+      # @param obj [Object]
+      # @return [Protobuf::Datatypes::Scalar]
+      def self.Scalar(obj)
+        case obj
+        when Integer
+          if obj < 0
+            type = Protobuf::Datatypes::Scalar::Type::V_SINT
+            Protobuf::Datatypes::Scalar.new(type: type, v_signed_int: obj)
+          else
+            type = Protobuf::Datatypes::Scalar::Type::V_UINT
+            Protobuf::Datatypes::Scalar.new(type: type, v_unsigned_int: obj)
+          end
+        when Float
+          type = Protobuf::Datatypes::Scalar::Type::V_DOUBLE
+          Protobuf::Datatypes::Scalar.new(type: type, v_double: obj)
+        when String
+          type = Protobuf::Datatypes::Scalar::Type::V_STRING
+          str = Protobuf::Datatypes::Scalar::String.new(value: obj)
+          Protobuf::Datatypes::Scalar.new(type: type, v_string: str)
+        when true, false
+          type = Protobuf::Datatypes::Scalar::Type::V_BOOL
+          Protobuf::Datatypes::Scalar.new(type: type, v_bool: obj)
+        when nil
+          type = Protobuf::Datatypes::Scalar::Type::V_NULL
+          Protobuf::Datatypes::Scalar.new(type: type)
+        else
+          raise "unsupported type: #{obj.inspect}"
+        end
+      end
+
+      # @param obj [Object]
+      # @return [Protobuf::Datatypes::Any]
+      def self.Any(obj)
+        any = Protobuf::Datatypes::Any.new
+        case obj
+        when ::Array
+          any.type = Protobuf::Datatypes::Any::Type::ARRAY
+          any.array = Protobuf::Datatypes::Array.new
+          obj.each do |o|
+            any.array.value.push Any(o)
+          end
+        else
+          any.type = Protobuf::Datatypes::Any::Type::SCALAR
+          any.scalar = Scalar(obj)
+        end
+        any
+      end
+
       class Scalar
         def to_object
           case type
