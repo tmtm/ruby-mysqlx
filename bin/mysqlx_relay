@@ -44,17 +44,14 @@ def relay(r, w, from)
     break unless data && data.length == size-1
     w.write(head + data)
     if from == :client
-      puts "C: #{ClientMessage[type] || type}"
-      p ClientMessage[type].decode(data)
+      puts "C: #{ClientMessage[type].decode(data).inspect}"
     else
-      puts "S: #{ServerMessage[type] || type}"
-      p ServerMessage[type].decode(data)
+      puts "S: #{ServerMessage[type].decode(data).inspect}"
     end
   end
-rescue => e
-  p e
 end
 
+Thread.abort_on_exception = true
 localport, host, port = ARGV
 Socket.tcp_server_loop(localport) do |client, _addrinfo|
   server = TCPSocket.new(host, port)

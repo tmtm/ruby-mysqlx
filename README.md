@@ -24,6 +24,8 @@ Or install it yourself as:
 
 ## Development
 
+This requires [Protocol Buffers v2.6.1](https://github.com/google/protobuf/releases/tag/v2.6.1).
+
     % ./bin/setup
     % rake MYSQL_DIR=/tmp/mysql-source-dir
 

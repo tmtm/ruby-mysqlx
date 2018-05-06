@@ -46,6 +46,11 @@ module Mysqlx
           obj.each do |o|
             any.array.value.push Any(o)
           end
+        when ::Hash
+          any.type = Protobuf::Datatypes::Any::Type::OBJECT
+          any.fld = obj.map do |key, value|
+            Protobuf::Datatypes::Object::ObjectField.new(key: key.to_s, value: Any(value))
+          end
         else
           any.type = Protobuf::Datatypes::Any::Type::SCALAR
           any.scalar = Scalar(obj)
@@ -92,13 +97,23 @@ module Mysqlx
         end
       end
 
+      class Object
+        def to_object
+          fld.map{|f| [f.key, f.value]}.to_h
+        end
+
+        def inspect
+          to_object.inspect
+        end
+      end
+
       class Any
         def to_object
           case type
           when Type::SCALAR
             scalar.to_object
           when Type::OBJECT
-            raise 'not implemented'
+            obj.to_object
           when Type::ARRAY
             array.to_object
           end
