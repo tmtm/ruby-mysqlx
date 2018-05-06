@@ -1,4 +1,6 @@
-require_relative 'protobuf/mysqlx.pb'
+Dir.glob('protobuf/mysqlx*.pb.rb', base: __dir__) do |pb|
+  require_relative pb
+end
 
 module Mysqlx
   module Protobuf
