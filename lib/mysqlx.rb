@@ -1,6 +1,32 @@
+require 'socket'
+require 'mysqlx/protocol'
 require "mysqlx/version"
 
 module Mysqlx
+  def self.session(uri=nil, **opts)
+    Session.new(uri, **opts)
+  end
+
+  class Session
+    # @param uri [String]
+    # @param user [String]
+    # @param password [String]
+    # @param host [String]
+    # @param port [String, Integer]
+    def initialize(uri=nil, user: nil, password: nil, host: nil, port: nil)
+      if uri
+        u = URI.parse(uri)
+        host ||= u.host
+        port ||= u.port
+        user ||= u.user
+        password ||= u.password
+      end
+      socket = TCPSocket.new(host, port)
+      proto = Mysqlx::Protocol.new(socket)
+      proto.authenticate(user, password)
+    end
+  end
+
   class Error < StandardError
     # @param error [Mysqlx::Protobuf::Error]
     def initialize(error)

@@ -1,5 +1,5 @@
-require 'socket'
 require 'bigdecimal'
+require 'digest'
 require_relative 'protobuf'
 
 module Mysqlx
@@ -71,25 +71,7 @@ module Mysqlx
     # @param password [String]
     # @param database [String]
     def authenticate(user, password, database=nil)
-      send(Protobuf::Session::AuthenticateStart.new(mech_name: 'MYSQL41'))
-      challenge = recv.auth_data
-      scrambled = scramble_password(password, challenge)
-      data = [database, user, "*"+scrambled].join("\0")
-      send(Mysqlx::Protobuf::Session::AuthenticateContinue.new(auth_data: data))
-      frame = recv
-      unless recv.is_a? Protobuf::Session::AuthenticateOk
-        raise "invalid packet received: #{recv.inspect}"
-      end
-    end
-
-    # @param password [String]
-    # @param challenge [String]
-    # @return [String] scrambled password
-    def scramble_password(password, challenge)
-      hash1 = Digest::SHA1.digest(password)
-      hash2 = Digest::SHA1.digest(hash1)
-      hash1.unpack('C*').zip(Digest::SHA1.digest(challenge+hash2).unpack('C*'))
-        .map{|a,b| a^b}.pack('C*').unpack('H*').first.upcase
+      AuthSha256Memory.new(self).authenticate(user, password, database)
     end
 
     # @param sql [String]
@@ -251,6 +233,69 @@ module Mysqlx
       n = "-#{n}" if sign == 'd'
       n[-scale, 0] = '.'
       BigDecimal(n)
+    end
+
+    class Auth
+      # @param proto [Mysqlx::Protocol]
+      def initialize(proto)
+        @proto = proto
+      end
+
+      # @param user [String]
+      # @param password [String]
+      # @param database [String]
+      def authenticate(user, password, database=nil)
+        @proto.send(Protobuf::Session::AuthenticateStart.new(mech_name: mech_name))
+        challenge = @proto.recv.auth_data
+        scrambled = scramble_password(password, challenge)
+        data = [database, user, scrambled].join("\0")
+        @proto.send(Mysqlx::Protobuf::Session::AuthenticateContinue.new(auth_data: data))
+        frame = @proto.recv
+        unless @proto.recv.is_a? Protobuf::Session::AuthenticateOk
+          raise "invalid packet received: #{recv.inspect}"
+        end
+      end
+
+      # @param str1 [String]
+      # @param str2 [String]
+      # @return [String]
+      def xor(str1, str2)
+        str1.unpack('C*').zip(str2.unpack('C*')).map{|a, b| a ^ b}.pack('C*')
+      end
+    end
+
+    class AuthMysql41 < Auth
+      # @return [String]
+      def mech_name
+        'MYSQL41'
+      end
+
+      # @param password [String]
+      # @param challenge [String]
+      # @return [String] scrambled password
+      def scramble_password(password, challenge)
+        hash1 = Digest::SHA1.digest(password)
+        hash2 = Digest::SHA1.digest(hash1)
+        hash3 = Digest::SHA1.digest(challenge + hash2)
+        '*'+xor(hash1, hash3).unpack1('H*').upcase
+      end
+    end
+
+    class AuthSha256Memory < Auth
+      # @return [String]
+      def mech_name
+        'SHA256_MEMORY'
+      end
+
+      # @param password [String]
+      # @param challenge [String]
+      # @return [String] scrambled password
+      def scramble_password(password, challenge)
+        hash1 = Digest::SHA256.digest(password)
+        hash2 = Digest::SHA256.digest(hash1)
+        hash3 = Digest::SHA256.digest(hash2 + challenge)
+        xor(hash1, hash3).unpack1('H*').upcase
+      end
     end
   end
 end
