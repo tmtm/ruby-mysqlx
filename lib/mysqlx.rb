@@ -1,30 +1,43 @@
 require 'socket'
+require 'mysqlx/session'
+require 'mysqlx/schema'
+require 'mysqlx/table'
+require 'mysqlx/collection'
 require 'mysqlx/protocol'
 require "mysqlx/version"
 
 module Mysqlx
-  def self.session(uri=nil, **opts)
-    Session.new(uri, **opts)
+  class << self
+    # @return [Session]
+    def get_session(*args)
+      Session.new(*args)
+    end
+
+    alias session get_session
   end
 
-  class Session
-    # @param uri [String]
-    # @param user [String]
-    # @param password [String]
-    # @param host [String]
-    # @param port [String, Integer]
-    def initialize(uri=nil, user: nil, password: nil, host: nil, port: nil)
-      if uri
-        u = URI.parse(uri)
-        host ||= u.host
-        port ||= u.port
-        user ||= u.user
-        password ||= u.password
-      end
-      socket = TCPSocket.new(host, port)
-      proto = Mysqlx::Protocol.new(socket)
-      proto.authenticate(user, password)
-    end
+  class CollectionFindObj
+  end
+
+  class CollectionInsertObj
+  end
+
+  class CollectionUpdateObj
+  end
+
+  class CollectionDeleteObj
+  end
+
+  class SelectObj
+  end
+
+  class InsertObj
+  end
+
+  class UpdateObj
+  end
+
+  class DeleteObj
   end
 
   class Error < StandardError
@@ -74,6 +87,13 @@ module Mysqlx
     # @param rows [Array<Array<Object>>]
     def initialize(fields, rows)
       @fields, @rows = fields, rows
+      @current = 0
+    end
+
+    def fetch_one
+      ret = @rows[@current]
+      @current += 1
+      ret
     end
 
     def each(&block)

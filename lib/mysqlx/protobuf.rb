@@ -48,9 +48,10 @@ module Mysqlx
           end
         when ::Hash
           any.type = Protobuf::Datatypes::Any::Type::OBJECT
-          any.fld = obj.map do |key, value|
+          fld = obj.map do |key, value|
             Protobuf::Datatypes::Object::ObjectField.new(key: key.to_s, value: Any(value))
           end
+          any.obj = Protobuf::Datatypes::Object.new(fld: fld)
         else
           any.type = Protobuf::Datatypes::Any::Type::SCALAR
           any.scalar = Scalar(obj)
@@ -83,7 +84,7 @@ module Mysqlx
         end
 
         def inspect
-          to_object.inspect
+          "#<Scalar::#{type}:#{to_object.inspect}>"
         end
       end
 
@@ -93,7 +94,7 @@ module Mysqlx
         end
 
         def inspect
-          to_object.inspect
+          "#<Array:#{to_object.inspect}>"
         end
       end
 
@@ -103,7 +104,7 @@ module Mysqlx
         end
 
         def inspect
-          to_object.inspect
+          "#<Object:#{to_object.inspect}>"
         end
       end
 
@@ -120,7 +121,7 @@ module Mysqlx
         end
 
         def inspect
-          to_object.inspect
+          "#<Any::#{type}:#{to_object.inspect}>"
         end
       end
     end

@@ -77,8 +77,8 @@ module Mysqlx
     # @param sql [String]
     # @param args [Array<Object>]
     # @return [Mysqlx::Result]
-    def sql_execute(sql, *args)
-      send(Protobuf::Sql::StmtExecute.new(stmt: sql, args: args.map{|a| Protobuf::Datatypes.Any(a)}))
+    def sql_execute(sql, *args, namespace: 'sql')
+      send(Protobuf::Sql::StmtExecute.new(stmt: sql, args: args.map{|a| Protobuf::Datatypes.Any(a)}, namespace: namespace))
       data = recv
       fields = []
       while data.is_a? Protobuf::Resultset::ColumnMetaData
