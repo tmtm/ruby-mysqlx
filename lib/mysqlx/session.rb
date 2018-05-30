@@ -18,6 +18,7 @@ module Mysqlx
       socket = TCPSocket.new(host, port)
       @proto = Mysqlx::Protocol.new(socket)
       @proto.authenticate(user, password)
+      @name = "#{user}@#{host}:#{port}"
     end
 
     def close
@@ -68,6 +69,10 @@ module Mysqlx
     end
 
     def rollback_to(name)
+    end
+
+    def inspect
+      "#<#{self.class}:#{@name}>"
     end
   end
 end

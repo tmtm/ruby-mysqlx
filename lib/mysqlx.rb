@@ -90,7 +90,9 @@ module Mysqlx
       @current = 0
     end
 
+    # @return [Array]
     def fetch_one
+      return nil if @current >= @rows.size
       ret = @rows[@current]
       @current += 1
       ret
