@@ -96,7 +96,7 @@ module Mysqlx
       until data.is_a? Protobuf::Sql::StmtExecuteOk
         data = recv
       end
-      Result.new(fields, rows)
+      SqlResult.new(fields, rows)
     end
 
     # @param fields [Array<Field>]

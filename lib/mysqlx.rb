@@ -80,7 +80,7 @@ module Mysqlx
     end
   end
 
-  class Result
+  class SqlResult
     include Enumerable
 
     # @param fields [Array<Field>]
