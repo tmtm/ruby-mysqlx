@@ -39,6 +39,13 @@ module Mysqlx
       Protobuf::ServerMessages::Type::RESULTSET_FETCH_DONE_MORE_OUT_PARAMS.to_i => Protobuf::Resultset::FetchDoneMoreOutParams,
     }
 
+    # type => Notice Message
+    NoticeMessage = {
+      Protobuf::Notice::Frame::Type::WARNING.to_i => Mysqlx::Protobuf::Notice::Warning,
+      Protobuf::Notice::Frame::Type::SESSION_VARIABLE_CHANGED.to_i => Mysqlx::Protobuf::Notice::SessionVariableChanged,
+      Protobuf::Notice::Frame::Type::SESSION_STATE_CHANGED.to_i => Mysqlx::Protobuf::Notice::SessionStateChanged,
+    }
+
     # @param sock [Socket]
     def initialize(sock)
       @sock = sock
