@@ -2,6 +2,7 @@ require 'socket'
 require 'mysqlx/session'
 require 'mysqlx/schema'
 require 'mysqlx/table'
+require 'mysqlx/result'
 require 'mysqlx/collection'
 require 'mysqlx/protocol'
 require "mysqlx/version"

@@ -68,9 +68,7 @@ module Mysqlx
       end
       proto = table.schema.session.proto
       proto.send(i)
-      p proto.recv
-      p proto.recv
-      p proto.recv
+      Result.new(proto)
     end
 
     def inspect
