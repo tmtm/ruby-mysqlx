@@ -1,3 +1,5 @@
+require 'openssl'
+
 module Mysqlx
   class Session
     attr_reader :proto
@@ -7,7 +9,8 @@ module Mysqlx
     # @param password [String]
     # @param host [String]
     # @param port [String, Integer]
-    def initialize(uri=nil, user: nil, password: nil, host: nil, port: nil)
+    # @param ssl [TrueClass|Hash] SSL/TLS options you use. :protocol and the writable accessors of OpenSSL::SSL::SSLContext is available.
+    def initialize(uri=nil, user: nil, password: nil, host: nil, port: nil, ssl: true)
       if uri
         u = URI.parse(uri)
         host ||= u.host
@@ -15,7 +18,7 @@ module Mysqlx
         user ||= u.user
         password ||= u.password
       end
-      socket = TCPSocket.new(host, port)
+      socket = create_socket(host, port, ssl)
       @proto = Mysqlx::Protocol.new(socket)
       @proto.authenticate(user, password)
       @name = "#{user}@#{host}:#{port}"
@@ -73,6 +76,39 @@ module Mysqlx
 
     def inspect
       "#<#{self.class}:#{@name}>"
+    end
+
+    def create_socket(host, port, ssl)
+      raw_socket = TCPSocket.new(host, port)
+      return raw_socket unless ssl
+
+      ssl_context = create_ssl_context(ssl)
+      OpenSSL::SSL::SSLSocket.new(raw_socket, ssl_context)
+    end
+
+    DEFAULT_SSL_VERSION = :TLSv1_2
+
+    def create_ssl_context(ssl)
+      if ssl.respond_to?(:[])
+        options = ssl.dup
+        protocol = options.delete(:protocol)
+      else
+        no_options = true
+      end
+      protocol ||= DEFAULT_SSL_VERSION
+      context = OpenSSL::SSL::SSLContext.new(protocol)
+
+      return context if no_options
+
+      options.each do |key, value|
+        begin
+          context.send(:"#{key}=", value)
+        rescue NoMethodError
+          raise ArgumentError, "Unsupported ssl option #{key}. See https://docs.ruby-lang.org/ja/#{RUBY_VERSION.split('.').take(2).join('.')}.0/class/OpenSSL=3a=3aSSL=3a=3aSSLContext.html"
+        end
+      end
+
+      context
     end
   end
 end
